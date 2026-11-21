@@ -1,4 +1,4 @@
-const CACHE_NAME = 'korean-trainer-v2';
+const CACHE_NAME = 'korean-trainer-v3';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (event) => {
