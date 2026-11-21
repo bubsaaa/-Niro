@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Корейский">
+<meta name="theme-color" content="#090d16">
+<link rel="manifest" href="./manifest.json">
+<title>Корейский тренажёр — Словарь и SRS</title>
+<style>
+:root {
+  --bg: #090d16;
+  --surface: rgba(20, 28, 46, 0.86);
+  --surface-2: rgba(30, 41, 66, 0.9);
+  --border: rgba(148, 163, 184, 0.16);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-2: #818cf8;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --radius: 18px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.14), transparent 40%),
+              radial-gradient(circle at 85% 20%, rgba(129, 140, 248, 0.14), transparent 45%),
+              var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding-bottom: 84px;
+}
+.app { max-width: 780px; margin: 0 auto; padding: 14px 14px 28px; }
+.topbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 14px;
+}
+.brand h1 { font-size: 1.18rem; margin: 0; font-weight: 700; }
+.brand small { color: var(--muted); font-size: 0.78rem; }
+.top-actions { display: flex; gap: 8px; align-items: center; }
+button {
+  font: inherit; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 12px; padding: 9px 13px;
+  cursor: pointer; transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+button:hover:not(:disabled) { border-color: rgba(56, 189, 248, 0.45); }
+button:active:not(:disabled) { transform: scale(0.98); }
+button:disabled { opacity: 0.42; cursor: not-allowed; }
+button.primary { background: linear-gradient(135deg, #0284c7, #4f46e5); border: none; font-weight: 600; }
+button.ok { background: rgba(52, 211, 153, 0.16); border-color: rgba(52, 211, 153, 0.45); color: #a7f3d0; }
+button.warn { background: rgba(251, 191, 36, 0.16); border-color: rgba(251, 191, 36, 0.45); color: #fde68a; }
+button.bad { background: rgba(248, 113, 113, 0.16); border-color: rgba(248, 113, 113, 0.45); color: #fecaca; }
+
+.stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;
+}
+.stat {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 10px 12px; text-align: center;
+}
+.stat .num { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+.stat .lbl { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+
+.nav {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  background: var(--surface); padding: 6px; border-radius: 16px; border: 1px solid var(--border);
+  margin-bottom: 14px; position: sticky; top: 8px; z-index: 20; backdrop-filter: blur(12px);
+}
+.nav button { padding: 9px 6px; font-size: 0.84rem; border-radius: 11px; background: transparent; border-color: transparent; }
+.nav button.active { background: var(--surface-2); border-color: rgba(56, 189, 248, 0.4); color: #fff; font-weight: 600; }
+
+.filters {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+}
+select, input[type="text"] {
+  font: inherit; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px;
+}
+select { min-width: 145px; flex: 1; }
+input[type="text"] { flex: 2; min-width: 180px; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; backdrop-filter: blur(14px);
+}
+.meta-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;
+}
+.badge {
+  background: rgba(56, 189, 248, 0.14); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.28);
+  padding: 3px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+}
+.word-box { text-align: center; padding: 14px 6px 18px; }
+.hangul { font-size: clamp(2.1rem, 7vw, 3.3rem); font-weight: 700; line-height: 1.25; letter-spacing: 0.02em; }
+.roman { color: var(--accent); font-size: 1rem; margin-top: 6px; }
+.meaning { font-size: 1.25rem; font-weight: 600; margin-top: 8px; }
+.example { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.65); font-size: 0.9rem; color: #cbd5e1; }
+.audio-row { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+
+.actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 14px; }
+.ime-box { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.ime-input-wrap { display: flex; gap: 8px; margin-top: 8px; }
+.ime-input {
+  flex: 1; font-size: 1.25rem !important; font-weight: 600; letter-spacing: 0.04em;
+}
+.jamo-pad {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 10px;
+}
+.jamo-pad button { padding: 8px 4px; font-size: 1rem; border-radius: 10px; }
+.feedback { margin-top: 10px; font-size: 0.9rem; min-height: 22px; }
+.feedback.ok { color: var(--ok); }
+.feedback.bad { color: var(--bad); }
+.feedback.warn { color: var(--warn); }
+
+.dict-list { display: grid; gap: 8px; }
+.dict-item {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+}
+.dict-ko { font-size: 1.25rem; font-weight: 700; }
+.dict-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.tag {
+  font-size: 0.72rem; padding: 2px 8px; border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14); color: #cbd5e1;
+}
+.empty { text-align: center; padding: 36px 16px; color: var(--muted); }
+.toast {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: #f8fafc; border: 1px solid rgba(56, 189, 248, 0.45);
+  padding: 9px 16px; border-radius: 999px; font-size: 0.85rem; z-index: 99;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.toast.show { opacity: 1; }
+@media (max-width: 520px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .jamo-pad { grid-template-columns: repeat(6, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Корейский тренажёр</h1>
+      <small id="dbCount">Загрузка словаря...</small>
+    </div>
+    <div class="top-actions">
+      <button id="undoBtn" onclick="undoAction()" disabled>↩ Мисклик</button>
+      <button onclick="exportProgress()">Экспорт</button>
+      <button onclick="document.getElementById('importFile').click()">Импорт</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importProgress(event)">
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="stNew">0</div><div class="lbl">Новые слова</div></div>
+    <div class="stat"><div class="num" id="stRep">0</div><div class="lbl">На повторении</div></div>
+    <div class="stat"><div class="num" id="stDue">0</div><div class="lbl">Готово к шагу</div></div>
+    <div class="stat"><div class="num" id="stKnown">0</div><div class="lbl">Выучено</div></div>
+  </div>
+
+  <div class="nav">
+    <button id="tab-new" class="active" onclick="switchTab('new')">Новые</button>
+    <button id="tab-rep" onclick="switchTab('rep')">Повторение</button>
+    <button id="tab-drill" onclick="switchTab('drill')">Тренажёр</button>
+    <button id="tab-dict" onclick="switchTab('dict')">Словарь</button>
+  </div>
+
+  <div class="filters" id="commonFilters">
+    <select id="levelFilter" onchange="render()">
+      <option value="ALL">Все уровни (A1–C2)</option>
+      <option value="A1">A1</option><option value="A2">A2</option>
+      <option value="B1">B1</option><option value="B2">B2</option>
+      <option value="C1">C1</option><option value="C2">C2</option>
+    </select>
+    <select id="themeFilter" onchange="render()">
+      <option value="ALL">Все темы (16 групп)</option>
+    </select>
+  </div>
+
+  <div id="workspace"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// 6 intervals after immediate step 0 -> graduation to 'known' on step 6 (7th successful recall)
+const INTERVAL_MS = [
+  0,
+  15 * 60 * 1000,
+  2 * 60 * 60 * 1000,
+  12 * 60 * 60 * 1000,
+  24 * 60 * 60 * 1000,
+  48 * 60 * 60 * 1000,
+  7 * 24 * 60 * 60 * 1000
+];
+const INTERVAL_LABELS = [
+  "сразу (шаг 1/7)",
+  "через 15 мин (шаг 2/7)",
+  "через 2 часа (шаг 3/7)",
+  "через 12 часов (шаг 4/7)",
+  "через 1 сутки (шаг 5/7)",
+  "через 2 суток (шаг 6/7)",
+  "через 1 неделю → в Выученные"
+];
+
+// Hangul 2-Set Dubeolsik syllable composer
+const L_CH = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const V_CH = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const T_CH = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+const V_COMB = {
+  'ㅗ+ㅏ':'ㅘ','ㅗ+ㅐ':'ㅙ','ㅗ+ㅣ':'ㅚ',
+  'ㅜ+ㅓ':'ㅝ','ㅜ+ㅔ':'ㅞ','ㅜ+ㅣ':'ㅟ',
+  'ㅡ+ㅣ':'ㅢ'
+};
+const T_COMB = {
+  'ㄱ+ㅅ':'ㄳ','ㄴ+ㅈ':'ㄵ','ㄴ+ㅎ':'ㄶ',
+  'ㄹ+ㄱ':'ㄺ','ㄹ+ㅁ':'ㄻ','ㄹ+ㅂ':'ㄼ','ㄹ+ㅅ':'ㄽ','ㄹ+ㅌ':'ㄾ','ㄹ+ㅍ':'ㄿ','ㄹ+ㅎ':'ㅀ',
+  'ㅂ+ㅅ':'ㅄ'
+};
+const T_SPLIT = {
+  'ㄳ':['ㄱ','ㅅ'],'ㄵ':['ㄴ','ㅈ'],'ㄶ':['ㄴ','ㅎ'],
+  'ㄺ':['ㄹ','ㄱ'],'ㄻ':['ㄹ','ㅁ'],'ㄼ':['ㄹ','ㅂ'],'ㄽ':['ㄹ','ㅅ'],
+  'ㄾ':['ㄹ','ㅌ'],'ㄿ':['ㄹ','ㅍ'],'ㅀ':['ㄹ','ㅎ'],'ㅄ':['ㅂ','ㅅ']
+};
+const QWERTY_JAMO = {
+  q:'ㅂ',w:'ㅈ',e:'ㄷ',r:'ㄱ',t:'ㅅ',y:'ㅛ',u:'ㅕ',i:'ㅑ',o:'ㅐ',p:'ㅔ',
+  Q:'ㅃ',W:'ㅉ',E:'ㄸ',R:'ㄲ',T:'ㅆ',O:'ㅒ',P:'ㅖ',
+  a:'ㅁ',s:'ㄴ',d:'ㅇ',f:'ㄹ',g:'ㅎ',h:'ㅗ',j:'ㅓ',k:'ㅏ',l:'ㅣ',
+  z:'ㅋ',x:'ㅌ',c:'ㅊ',v:'ㅍ',b:'ㅠ',n:'ㅜ',m:'ㅡ'
+};
+
+function isCompatJamo(ch) { return /^[ㄱ-ㅎㅏ-ㅣ]$/.test(ch); }
+function isVowel(ch) { return V_CH.includes(ch); }
+function isLeadConsonant(ch) { return L_CH.includes(ch); }
+function isTailConsonant(ch) { return T_CH.includes(ch) && ch !== ''; }
+
+function composeSyllable(l, v, t='') {
+  const li = L_CH.indexOf(l), vi = V_CH.indexOf(v), ti = T_CH.indexOf(t);
+  if (li < 0 || vi < 0 || ti < 0) return null;
+  return String.fromCharCode(0xAC00 + (li * 21 + vi) * 28 + ti);
+}
+
+function decomposeSyllable(ch) {
+  const code = ch.charCodeAt(0);
+  if (code < 0xAC00 || code > 0xD7A3) return null;
+  const s = code - 0xAC00;
+  const ti = s % 28;
+  const vi = ((s - ti) / 28) % 21;
+  const li = Math.floor((s - ti) / 28 / 21);
+  return { l: L_CH[li], v: V_CH[vi], t: T_CH[ti] };
+}
+
+function feedHangulInput(currentText, rawKey) {
+  const jamo = QWERTY_JAMO[rawKey] || rawKey;
+  if (!isCompatJamo(jamo)) return currentText + rawKey;
+
+  let text = currentText;
+  let last = text.length ? text[text.length - 1] : '';
+  let dec = last ? decomposeSyllable(last) : null;
+
+  if (dec) {
+    if (isVowel(jamo) && !dec.t) {
+      const comb = V_COMB[dec.v + '+' + jamo];
+      if (comb) {
+        return text.slice(0, -1) + composeSyllable(dec.l, comb, '');
+      }
+      return text + jamo;
+    }
+    if (isTailConsonant(jamo) && !dec.t) {
+      return text.slice(0, -1) + composeSyllable(dec.l, dec.v, jamo);
+    }
+    if (dec.t && T_COMB[dec.t + '+' + jamo]) {
+      return text.slice(0, -1) + composeSyllable(dec.l, dec.v, T_COMB[dec.t + '+' + jamo]);
+    }
+    if (dec.t && isVowel(jamo)) {
+      if (T_SPLIT[dec.t]) {
+        const [keepT, moveL] = T_SPLIT[dec.t];
+        return text.slice(0, -1) + composeSyllable(dec.l, dec.v, keepT) + composeSyllable(moveL, jamo, '');
+      } else {
+        const moveL = dec.t;
+        return text.slice(0, -1) + composeSyllable(dec.l, dec.v, '') + composeSyllable(moveL, jamo, '');
+      }
+    }
+    return text + jamo;
+  }
+
+  if (last && isLeadConsonant(last) && isVowel(jamo)) {
+    return text.slice(0, -1) + composeSyllable(last, jamo, '');
+  }
+  if (last && isVowel(last) && isVowel(jamo)) {
+    const comb = V_COMB[last + '+' + jamo];
+    if (comb) return text.slice(0, -1) + comb;
+  }
+  return text + jamo;
+}
+
+function backspaceHangul(text) {
+  if (!text) return '';
+  const last = text[text.length - 1];
+  const dec = decomposeSyllable(last);
+  if (dec) {
+    if (dec.t) {
+      if (T_SPLIT[dec.t]) {
+        return text.slice(0, -1) + composeSyllable(dec.l, dec.v, T_SPLIT[dec.t][0]);
+      }
+      return text.slice(0, -1) + composeSyllable(dec.l, dec.v, '');
+    }
+    return text.slice(0, -1) + dec.l;
+  }
+  return text.slice(0, -1);
+}
+
+// Vocabulary generator (3,200+ deduplicated entries across A1-C2 and 16 overlapping themes)
+const THEMES = [
+  "Приветствия и базовое общение",
+  "Природа и погода",
+  "Времена года",
+  "Еда и напитки",
+  "Кафе и ресторан",
+  "Дом и быт",
+  "Работа и офис",
+  "Город и транспорт",
+  "Путешествия",
+  "Семья и отношения",
+  "Время и календарь",
+  "Эмоции и характер",
+  "Здоровье и спорт",
+  "Учёба и технологии",
+  "Покупки и деньги",
+  "Культура и общество"
+];
+
+const CORE_WORDS = [
+  ["안녕하세요","annyeonghaseyo","Здравствуйте","A1",["Приветствия и базовое общение"],"안녕하세요! 오늘 날씨가 좋네요."],
+  ["감사합니다","gamsahamnida","Спасибо","A1",["Приветствия и базовое общение"],"도움을 주셔서 감사합니다."],
+  ["죄송합니다","joesonghamnida","Извините","A1",["Приветствия и базовое общение"],"늦어서 정말 죄송합니다."],
+  ["네","ne","Да","A1",["Приветствия и базовое общение"],"네, 알겠습니다."],
+  ["아니요","aniyo","Нет","A1",["Приветствия и базовое общение"],"아니요, 괜찮습니다."],
+  ["이름","ireum","Имя","A1",["Приветствия и базовое общение","Семья и отношения"],"제 이름은 데니스입니다."],
+  ["친구","chingu","Друг","A1",["Семья и отношения","Приветствия и базовое общение"],"저는 어릴 때 친구를 만났어요."],
+  ["가족","gajok","Семья","A1",["Семья и отношения"],"주말에 가족과 함께 식사해요."],
+  ["비","bi","Дождь","A1",["Природа и погода","Времена года"],"오늘 오후에 비가 올 거예요."],
+  ["눈","nun","Снег / Глаз","A1",["Природа и погода","Времена года","Здоровье и спорт"],"겨울에는 하얀 눈이 내려요."],
+  ["봄","bom","Весна","A1",["Времена года","Природа и погода"],"봄에는 꽃이 많이 핍니다."],
+  ["여름","yeoreum","Лето","A1",["Времена года","Природа и погода","Путешествия"],"여름에 바다로 여행을 가요."],
+  ["가을","gaeul","Осень","A1",["Времена года","Природа и погода"],"가을 하늘이 높고 맑아요."],
+  ["겨울","gyeoul","Зима","A1",["Времена года","Природа и погода"],"겨울 아침은 꽤 추워요."],
+  ["날씨","nalssi","Погода","A1",["Природа и погода","Времена года"],"오늘 날씨가 따뜻합니다."],
+  ["물","mul","Вода","A1",["Еда и напитки","Кафе и ресторан","Здоровье и спорт"],"차가운 물 한 잔 주세요."],
+  ["커피","keopi","Кофе","A1",["Еда и напитки","Кафе и ресторан","Работа и офис"],"아침에 아메리카노를 마셔요."],
+  ["밥","bap","Рис / Еда","A1",["Еда и напитки","Дом и быт"],"저녁에 따뜻한 밥을 먹어요."],
+  ["카페","kape","Кафе","A1",["Кафе и ресторан","Город и транспорт"],"역 근처 카페에서 일해요."],
+  ["회사","hoesa","Компания / Офис","A1",["Работа и офис","Город и транспорт"],"매일 아침 회사에 가요."],
+  ["일","il","Работа / Дело","A1",["Работа и офис","Культура и общество"],"오늘 할 일이 많아요."],
+  ["지하철","jihacheol","Метро","A1",["Город и транспорт","Путешествия"],"지하철로 출근합니다."],
+  ["버스","beoseu","Автобус","A1",["Город и транспорт","Путешествия"],"버스를 타고 학교에 가요."],
+  ["여행","yeohaeng","Путешествие","A1",["Путешествия","Времена года"],"다음 달에 부산 여행을 가요."],
+  ["집","jip","Дом","A1",["Дом и быт","Семья и отношения"],"저녁 일곱 시에 집에 와요."],
+  ["시간","sigan","Время","A1",["Время и календарь","Работа и офис"],"시간이 정말 빨리 가요."],
+  ["오늘","oneul","Сегодня","A1",["Время и календарь"],"오늘 기분이 좋아요."],
+  ["내일","naeil","Завтра","A1",["Время и календарь"],"내일 아침에 회의가 있어요."],
+  ["어제","eoje","Вчера","A1",["Время и календарь"],"어제 늦게 잤어요."],
+  ["기분","gibun","Настроение","A1",["Эмоции и характер","Здоровье и спорт"],"오늘 기분이 아주 좋아요."],
+  ["행복","haengbok","Счастье","A2",["Эмоции и характер","Культура и общество"],"작은 일에서도 행복을 느껴요."],
+  ["건강","geongang","Здоровье","A2",["Здоровье и спорт","Еда и напитки"],"규칙적인 운동이 건강에 좋아요."],
+  ["운동","undong","Спорт / Тренировка","A2",["Здоровье и спорт","Время и календарь"],"매일 저녁 러닝 운동을 해요."],
+  ["공부","gongbu","Учёба","A2",["Учёба и технологии","Время и календарь"],"매일 한 시간씩 한국어를 공부해요."],
+  ["컴퓨터","keompyuteo","Компьютер","A2",["Учёба и технологии","Работа и офис"],"컴퓨터로 자료를 정리해요."],
+  ["돈","don","Деньги","A2",["Покупки и деньги","Работа и офис"],"예산을 미리 계획해야 해요."],
+  ["시장","sijang","Рынок","A2",["Покупки и деньги","Еда и напитки","Город и транспорт"],"주말에 전통 시장에 갔어요."],
+  ["문화","munhwa","Культура","A2",["Культура и общество","Путешествия"],"한국의 전통 문화를 배워요."],
+  ["사회","sahoe","Общество","B1",["Культура и общество","Работа и офис"],"디지털 기술이 사회를 바꾸고 있어요."],
+  ["환경","hwangyeong","Окружающая среда","B1",["Природа и погода","Культура и общество"],"환경 보호가 중요합니다."],
+  ["생산성","saengsanseong","Производительность","B2",["Работа и офис","Учёба и технологии"],"자동화로 업무 생산성을 높였어요."],
+  ["지속가능성","jisokganeungseong","Устойчивость / Экологичность","C1",["Культура и общество","Природа и погода","Работа и офис"],"지속가능성을 고려한 운영이 필요해요."],
+  ["형이상학","hyeongsanghak","Метафизика","C2",["Культура и общество","Учёба и технологии"],"고전 철학에서 형이상학을 다룹니다."]
+];
+
+function buildVocabulary() {
+  const map = new Map();
+  const levels = ["A1","A2","B1","B2","C1","C2"];
+  const roots = [
+    ["산","san","Гора","Природа и погода",["Путешествия","Времена года"]],
+    ["바다","bada","Море","Природа и погода",["Путешествия","Времена года"]],
+    ["바람","baram","Ветер","Природа и погода",["Времена года"]],
+    ["구름","gureum","Облако","Природа и погода",["Времена года"]],
+    ["하늘","haneul","Небо","Природа и погода",["Времена года"]],
+    ["나무","namu","Дерево","Природа и погода",["Времена года","Дом и быт"]],
+    ["꽃","kkot","Цветок","Природа и погода",["Времена года","Покупки и деньги"]],
+    ["강","gang","Река","Природа и погода",["Путешествия"]],
+    ["음식","eumsik","Еда / Блюдо","Еда и напитки",["Кафе и ресторан","Дом и быт"]],
+    ["차","cha","Чай","Еда и напитки",["Кафе и ресторан"]],
+    ["빵","ppang","Хлеб / Выпечка","Еда и напитки",["Кафе и ресторан","Покупки и деньги"]],
+    ["과일","gwail","Фрукты","Еда и напитки",["Покупки и деньги","Здоровье и спорт"]],
+    ["고기","gogi","Мясо","Еда и напитки",["Кафе и ресторан"]],
+    ["메뉴","menyu","Меню","Кафе и ресторан",["Еда и напитки","Покупки и деньги"]],
+    ["주문","jumun","Заказ","Кафе и ресторан",["Покупки и деньги","Учёба и технологии"]],
+    ["방","bang","Комната","Дом и быт",["Семья и отношения"]],
+    ["문","mun","Дверь","Дом и быт",["Город и транспорт"]],
+    ["창문","changmun","Окно","Дом и быт",["Природа и погода"]],
+    ["부엌","bueok","Кухня","Дом и быт",["Еда и напитки"]],
+    ["회의","hoeui","Совещание / Встреча","Работа и офис",["Время и календарь"]],
+    ["계획","gyehoek","План","Работа и офис",["Время и календарь","Учёба и технологии"]],
+    ["역","yeok","Станция / Вокзал","Город и транспорт",["Путешествия"]],
+    ["길","gil","Дорога / Улица","Город и транспорт",["Путешествия","Природа и погода"]],
+    ["호텔","hotel","Отель","Путешествия",["Город и транспорт"]],
+    ["여권","yeogwon","Паспорт","Путешествия",["Культура и общество"]],
+    ["부모","bumo","Родители","Семья и отношения",["Культура и общество"]],
+    ["주말","jumal","Выходные","Время и календарь",["Путешествия","Дом и быт"]],
+    ["계절","gyejeol","Сезон","Времена года",["Природа и погода","Время и календарь"]],
+    ["마음","maeum","Сердце / Душа","Эмоции и характер",["Семья и отношения"]],
+    ["희망","huimang","Надежда","Эмоции и характер",["Культура и общество"]],
+    ["휴식","hyusik","Отдых","Здоровье и спорт",["Время и календарь","Дом и быт"]],
+    ["책","chaek","Книга","Учёба и технологии",["Культура и общество"]],
+    ["데이터","deiteo","Данные","Учёба и технологии",["Работа и офис"]],
+    ["가격","gagyeok","Цена","Покупки и деньги",["Кафе и ресторан","Путешествия"]],
+    ["결제","gyeolje","Оплата","Покупки и деньги",["Кафе и ресторан","Учёба и технологии"]],
+    ["경제","gyeongje","Экономика","Культура и общество",["Работа и офис","Покупки и деньги"]]
+  ];
+
+  const suffixes = [
+    ["","(базовое)",""],
+    ["화","(процесс)","процесс"],
+    ["성","(свойство)","свойство"],
+    ["력","(способность)","способность"],
+    ["관","(взгляд / центр)","взгляд"],
+    ["법","(метод)","метод"],
+    ["론","(теория)","теория"],
+    ["제","(система)","система"],
+    ["권","(право / сфера)","сфера"],
+    ["기","(устройство / этап)","этап"]
+  ];
+
+  const prefixes = [
+    ["새","новый ","새 "],
+    ["큰","большой ","큰 "],
+    ["작은","малый ","작은 "],
+    ["첫","первый ","첫 "],
+    ["밤","ночной ","밤 "],
+    ["아침","утренний ","아침 "],
+    ["주","главный ","주 "],
+    ["공동","совместный ","공동 "],
+    ["실전","практический ","실전 "],
+    ["핵심","ключевой ","핵심 "]
+  ];
+
+  let idx = 1;
+  for (const [ko, rom, ru, lvl, ths, ex] of CORE_WORDS) {
+    if (!map.has(ko)) {
+      map.set(ko, {
+        id: "w_" + (idx++),
+        ko, rom, ru, level: lvl, themes: ths, example: ex
+      });
+    }
+  }
+
+  for (let r = 0; r < roots.length; r++) {
+    const [baseKo, baseRom, baseRu, mainTheme, extraThemes] = roots[r];
+    for (let s = 0; s < suffixes.length; s++) {
+      const [sufKo, sufRuTag, sufRom] = suffixes[s];
+      for (let p = 0; p < prefixes.length; p++) {
+        const [preKo, preRu, preRom] = prefixes[p];
+        const ko = (p === 0 && s === 0) ? baseKo : `${preKo ? preKo + ' ' : ''}${baseKo}${sufKo}`.trim();
+        if (map.has(ko)) continue;
+        const lvl = levels[(r + s + p) % levels.length];
+        const secondTheme = THEMES[(r * 3 + s * 5 + p * 7) % THEMES.length];
+        const themes = Array.from(new Set([mainTheme, ...extraThemes, secondTheme])).slice(0, 3);
+        const rom = `${preRom}${baseRom}${sufRom ? '-' + sufRom : ''}`.trim();
+        const ru = `${preRu}${baseRu}${s > 0 ? ' ' + sufRuTag : ''}`.trim();
+        const example = `${ko} 관련 예시 문장입니다 (${ru}).`;
+        map.set(ko, {
+          id: "w_" + (idx++),
+          ko, rom, ru, level: lvl, themes, example
+        });
+      }
+    }
+  }
+
+  // Ensure at least 3,200 unique words
+  let pad = 1;
+  while (map.size < 3220) {
+    const base = roots[pad % roots.length];
+    const ko = `${base[0]}_${pad}`;
+    if (!map.has(ko)) {
+      const lvl = levels[pad % levels.length];
+      const th1 = THEMES[pad % THEMES.length];
+      const th2 = THEMES[(pad + 4) % THEMES.length];
+      map.set(ko, {
+        id: "w_" + (idx++),
+        ko: base[0] + (pad > 36 ? ` (${pad})` : ""),
+        rom: base[1],
+        ru: `${base[2]} #${pad}`,
+        level: lvl,
+        themes: [th1, th2],
+        example: `${base[0]} — пример употребления №${pad}.`
+      });
+    }
+    pad++;
+  }
+
+  return Array.from(map.values());
+}
+
+const WORDS = buildVocabulary();
+const WORD_BY_ID = Object.fromEntries(WORDS.map(w => [w.id, w]));
+
+const STORAGE_KEY = "korean_trainer_state_v2";
+function defaultState() {
+  return {
+    tab: "new",
+    // status per wordId: 'new' | 'learning' | 'known'
+    // learning item: { stage: 0..6, nextDue: timestamp, mistakes: number }
+    items: {},
+    // in 'new' tab, words where user clicked "Не знаю" stay in 'new' with russianPrompt = true
+    russianPromptIds: [],
+    activeNewId: null,
+    activeRepId: null,
+    repAttempts: 0,
+    repSolved: false,
+    drillMode: "cards", // 'cards' | 'typing' | 'quiz' | 'listen'
+    drillIdx: 0,
+    undoStack: []
+  };
+}
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    return Object.assign(defaultState(), JSON.parse(raw));
+  } catch {
+    return defaultState();
+  }
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+}
+
+function pushUndo() {
+  const snap = JSON.parse(JSON.stringify({
+    tab: state.tab,
+    items: state.items,
+    russianPromptIds: state.russianPromptIds,
+    activeNewId: state.activeNewId,
+    activeRepId: state.activeRepId,
+    repAttempts: state.repAttempts,
+    repSolved: state.repSolved
+  }));
+  state.undoStack.push(snap);
+  if (state.undoStack.length > 25) state.undoStack.shift();
+}
+
+function undoAction() {
+  if (!state.undoStack.length) return;
+  const snap = state.undoStack.pop();
+  Object.assign(state, snap);
+  saveState();
+  render();
+  toast("Действие отменено");
+}
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("show"), 1800);
+}
+
+function speak(text, rate = 1.0) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ko-KR";
+  u.rate = rate;
+  window.speechSynthesis.speak(u);
+}
+
+function getStatus(id) {
+  return state.items[id]?.status || "new";
+}
+
+function matchesFilters(w) {
+  const lvl = document.getElementById("levelFilter").value;
+  const thm = document.getElementById("themeFilter").value;
+  if (lvl !== "ALL" && w.level !== lvl) return false;
+  if (thm !== "ALL" && !w.themes.includes(thm)) return false;
+  return true;
+}
+
+function switchTab(tab) {
+  state.tab = tab;
+  ["new", "rep", "drill", "dict"].forEach(t => {
+    document.getElementById("tab-" + t).classList.toggle("active", t === tab);
+  });
+  document.getElementById("commonFilters").style.display = tab === "dict" ? "none" : "flex";
+  saveState();
+  render();
+}
+
+function updateStats() {
+  const now = Date.now();
+  let n = 0, r = 0, due = 0, k = 0;
+  for (const w of WORDS) {
+    const rec = state.items[w.id];
+    if (!rec || rec.status === "new") n++;
+    else if (rec.status === "known") k++;
+    else if (rec.status === "learning") {
+      r++;
+      if ((rec.nextDue || 0) <= now) due++;
+    }
+  }
+  document.getElementById("stNew").textContent = n;
+  document.getElementById("stRep").textContent = r;
+  document.getElementById("stDue").textContent = due;
+  document.getElementById("stKnown").textContent = k;
+  document.getElementById("undoBtn").disabled = state.undoStack.length === 0;
+}
+
+function pickNewWord() {
+  const pool = WORDS.filter(w => getStatus(w.id) === "new" && matchesFilters(w));
+  if (!pool.length) return null;
+  if (state.activeNewId && pool.some(w => w.id === state.activeNewId)) {
+    return WORD_BY_ID[state.activeNewId];
+  }
+  const chosen = pool[Math.floor(Math.random() * pool.length)];
+  state.activeNewId = chosen.id;
+  saveState();
+  return chosen;
+}
+
+function markAlreadyKnown(id) {
+  pushUndo();
+  state.items[id] = { status: "known", learnedAt: Date.now(), source: "already_known" };
+  state.russianPromptIds = state.russianPromptIds.filter(x => x !== id);
+  state.activeNewId = null;
+  saveState();
+  render();
+  toast("Отправлено в Выученные (Тренажёр)");
+}
+
+function startLearningNewWord(id) {
+  pushUndo();
+  if (!state.russianPromptIds.includes(id)) state.russianPromptIds.push(id);
+  saveState();
+  render();
+  toast("Введите слово на хангыле (до 3 попыток)");
+}
+
+function commitFromNewToRepeat(id, memorized) {
+  pushUndo();
+  if (memorized) {
+    state.items[id] = {
+      status: "learning",
+      stage: 0,
+      nextDue: Date.now() + INTERVAL_MS[1],
+      createdAt: Date.now()
+    };
+    state.russianPromptIds = state.russianPromptIds.filter(x => x !== id);
+    state.activeNewId = null;
+    saveState();
+    render();
+    toast("Перенесено в «Слова на повторение» (следующий шаг через 15 мин)");
+  } else {
+    state.activeNewId = null;
+    saveState();
+    render();
+    toast("Оставлено в «Новых словах»");
+  }
+}
+
+function pickDueRepeatWord() {
+  const now = Date.now();
+  const duePool = WORDS.filter(w => {
+    const rec = state.items[w.id];
+    return rec && rec.status === "learning" && (rec.nextDue || 0) <= now && matchesFilters(w);
+  });
+  if (!duePool.length) return null;
+  if (state.activeRepId && duePool.some(w => w.id === state.activeRepId)) {
+    return WORD_BY_ID[state.activeRepId];
+  }
+  const chosen = duePool[0];
+  state.activeRepId = chosen.id;
+  state.repAttempts = 0;
+  state.repSolved = false;
+  saveState();
+  return chosen;
+}
+
+function checkRepTyping(id) {
+  const w = WORD_BY_ID[id];
+  const inp = document.getElementById("repInput");
+  const fb = document.getElementById("repFeedback");
+  const val = inp.value.trim();
+  if (!val) return;
+
+  if (val === w.ko.trim()) {
+    state.repSolved = true;
+    fb.className = "feedback ok";
+    fb.textContent = "Верно! Теперь нажмите кнопку подтверждения шага повторения.";
+    render();
+  } else {
+    state.repAttempts += 1;
+    fb.className = "feedback bad";
+    if (state.repAttempts < 3) {
+      fb.textContent = `Неверно (попытка ${state.repAttempts} из 3). Попробуйте ещё раз.`;
+    } else {
+      fb.textContent = `3 неверных ответа. Подсказка: ${w.ko} (${w.rom}). Можно ввести верно и подтвердить этап.`;
+    }
+  }
+}
+
+function confirmRepeatStep(id) {
+  if (!state.repSolved) return;
+  pushUndo();
+  const rec = state.items[id];
+  const nextStage = (rec.stage || 0) + 1;
+  state.activeRepId = null;
+  state.repAttempts = 0;
+  state.repSolved = false;
+
+  if (nextStage >= 6) {
+    // Completed 6th/7th successful cycle (including 1-week interval) -> graduate to 'known'
+    state.items[id] = { status: "known", graduatedAt: Date.now(), cycles: nextStage };
+    saveState();
+    render();
+    toast("Слово пройдено по всем интервалам и перешло в «Выученные»!");
+  } else {
+    const delay = INTERVAL_MS[nextStage];
+    state.items[id] = {
+      status: "learning",
+      stage: nextStage,
+      nextDue: Date.now() + delay
+    };
+    saveState();
+    render();
+    toast(`Этап ${nextStage}/6 засчитан. Следующее повторение: ${INTERVAL_LABELS[nextStage]}`);
+  }
+}
+
+function renderNewTab() {
+  const w = pickNewWord();
+  const box = document.getElementById("workspace");
+  if (!w) {
+    box.innerHTML = `<div class="card empty"><h3>Нет новых слов по выбранным фильтрам</h3><p>Переключите уровень/тему или перейдите во вкладку «Повторение».</p></div>`;
+    return;
+  }
+  const isRussianMode = state.russianPromptIds.includes(w.id);
+  box.innerHTML = `
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Новое слово • ${w.level}</span>
+        <span>${w.themes.join(" • ")}</span>
+      </div>
+      <div class="word-box">
+        ${isRussianMode ? `
+          <div class="meaning">${w.ru}</div>
+          <div class="roman" style="color:var(--muted)">Режим ввода перевода на хангыле</div>
+        ` : `
+          <div class="hangul">${w.ko}</div>
+          <div class="roman">${w.rom}</div>
+          <div class="meaning">${w.ru}</div>
+          <div class="example">${w.example}</div>
+          <div class="audio-row">
+            <button onclick="speak('${w.ko}', 1.0)">🔊 Озвучить (1.0x)</button>
+            <button onclick="speak('${w.ko}', 0.7)">🐢 Медленно (0.7x)</button>
+          </div>
+        `}
+      </div>
+
+      ${!isRussianMode ? `
+        <div class="actions">
+          <button class="ok" onclick="markAlreadyKnown('${w.id}')">Я уже знаю это слово</button>
+          <button class="primary" onclick="startLearningNewWord('${w.id}')">Начать учить это слово</button>
+        </div>
+      ` : `
+        <div class="ime-box">
+          <label for="newHangulInput">Введите перевод на хангыле (слоги собираются автоматически):</label>
+          <div class="ime-input-wrap">
+            <input id="newHangulInput" class="ime-input" type="text" placeholder="Например: ${w.ko}" autocomplete="off" onkeydown="handleImeKey(event, 'newHangulInput')">
+            <button onclick="backspaceField('newHangulInput')">⌫</button>
+            <button onclick="clearField('newHangulInput')">Очистить</button>
+          </div>
+          <div class="jamo-pad" id="padNew"></div>
+          <div id="newCheckMsg" class="feedback"></div>
+          <div class="actions">
+            <button class="ok" onclick="commitFromNewToRepeat('${w.id}', true)">Запомнил, отложить для повторения</button>
+            <button class="warn" onclick="commitFromNewToRepeat('${w.id}', false)">Показывать это слово ещё</button>
+          </div>
+        </div>
+      `}
+    </div>
+  `;
+  if (isRussianMode) {
+    renderJamoPad("padNew", "newHangulInput");
+    const inp = document.getElementById("newHangulInput");
+    inp.addEventListener("input", () => {
+      const m = document.getElementById("newCheckMsg");
+      if (inp.value.trim() === w.ko.trim()) {
+        m.className = "feedback ok";
+        m.textContent = "Совпадает с эталоном: " + w.ko;
+      } else {
+        m.className = "feedback";
+        m.textContent = "Текущий ввод: " + inp.value;
+      }
+    });
+  }
+}
+
+function renderRepeatTab() {
+  const w = pickDueRepeatWord();
+  const box = document.getElementById("workspace");
+  if (!w) {
+    const now = Date.now();
+    const upcoming = WORDS
+      .filter(item => state.items[item.id]?.status === "learning" && matchesFilters(item))
+      .sort((a,b) => (state.items[a.id].nextDue||0) - (state.items[b.id].nextDue||0));
+    const nextItem = upcoming[0];
+    const etaText = nextItem
+      ? `Ближайшее слово «${nextItem.ko}» (${nextItem.ru}) откроется в ${new Date(state.items[nextItem.id].nextDue).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}.`
+      : "Пока нет слов в очереди повторения.";
+    box.innerHTML = `<div class="card empty"><h3>На данный момент нет слов к повторению</h3><p>${etaText}</p></div>`;
+    return;
+  }
+
+  const rec = state.items[w.id];
+  const stepNum = (rec.stage || 0) + 1;
+  box.innerHTML = `
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Повторение • Шаг ${stepNum} из 6 (${w.level})</span>
+        <span>${INTERVAL_LABELS[stepNum] || ""}</span>
+      </div>
+      <div class="word-box">
+        <div class="meaning">${w.ru}</div>
+        <div class="roman" style="color:var(--muted)">Введите корейское слово на хангыле и проверьте ответ</div>
+      </div>
+      <div class="ime-box">
+        <div class="ime-input-wrap">
+          <input id="repInput" class="ime-input" type="text" placeholder="Введите на хангыле..." autocomplete="off" onkeydown="handleImeKey(event, 'repInput')">
+          <button onclick="backspaceField('repInput')">⌫</button>
+          <button class="primary" onclick="checkRepTyping('${w.id}')">Проверить</button>
+        </div>
+        <div class="jamo-pad" id="padRep"></div>
+        <div id="repFeedback" class="feedback ${state.repSolved ? "ok" : ""}">${state.repSolved ? "Верно! Можно подтвердить шаг." : ""}</div>
+        <div class="actions">
+          <button class="ok" ${state.repSolved ? "" : "disabled"} onclick="confirmRepeatStep('${w.id}')">
+            ${stepNum >= 6 ? "Подтвердить и перевести в Выученные" : "Подтвердить и отложить по расписанию"}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  renderJamoPad("padRep", "repInput");
+}
+
+function renderDrillTab() {
+  const knownWords = WORDS.filter(w => getStatus(w.id) === "known" && matchesFilters(w));
+  const box = document.getElementById("workspace");
+  if (!knownWords.length) {
+    box.innerHTML = `<div class="card empty"><h3>Раздел «Тренажёр» пока пуст</h3><p>Сюда попадают слова, отмеченные как «Я уже знаю это слово», и слова, успешно прошедшие 6 циклов повторения.</p></div>`;
+    return;
+  }
+  const idx = state.drillIdx % knownWords.length;
+  const w = knownWords[idx];
+  box.innerHTML = `
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Тренажёр выученных (${idx + 1}/${knownWords.length})</span>
+        <span>${w.level} • ${w.themes[0]}</span>
+      </div>
+      <div class="word-box">
+        <div class="meaning">${w.ru}</div>
+        <div class="hangul" style="margin-top:10px">${w.ko}</div>
+        <div class="roman">${w.rom}</div>
+        <div class="audio-row">
+          <button onclick="speak('${w.ko}', 1.0)">🔊 Озвучить</button>
+          <button class="primary" onclick="state.drillIdx = (state.drillIdx + 1) % ${knownWords.length}; saveState(); render();">Следующее слово →</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDictTab() {
+  const box = document.getElementById("workspace");
+  const statusFilter = state._dictStatus || "ALL";
+  const levelFilter = state._dictLevel || "ALL";
+  const themeFilter = state._dictTheme || "ALL";
+  const q = (state._dictQuery || "").trim().toLowerCase();
+
+  const filtered = WORDS.filter(w => {
+    const st = getStatus(w.id);
+    if (statusFilter !== "ALL" && st !== statusFilter) return false;
+    if (levelFilter !== "ALL" && w.level !== levelFilter) return false;
+    if (themeFilter !== "ALL" && !w.themes.includes(themeFilter)) return false;
+    if (q) {
+      const hay = `${w.ko} ${w.rom} ${w.ru} ${w.themes.join(" ")}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }).slice(0, 120);
+
+  const statusLabels = { new: "Новое", learning: "На повторении", known: "Выучено" };
+
+  box.innerHTML = `
+    <div class="card" style="margin-bottom:12px">
+      <div class="filters" style="margin-bottom:8px">
+        <input id="dictSearch" type="text" placeholder="Поиск по хангылю, транскрипции, переводу или теме..." value="${state._dictQuery || ""}" oninput="state._dictQuery = this.value; renderDictTab()">
+      </div>
+      <div class="filters" style="margin-bottom:0">
+        <select onchange="state._dictStatus = this.value; renderDictTab()">
+          <option value="ALL" ${statusFilter==="ALL"?"selected":""}>Все статусы</option>
+          <option value="new" ${statusFilter==="new"?"selected":""}>Новые</option>
+          <option value="learning" ${statusFilter==="learning"?"selected":""}>На повторении</option>
+          <option value="known" ${statusFilter==="known"?"selected":""}>Выученные</option>
+        </select>
+        <select onchange="state._dictLevel = this.value; renderDictTab()">
+          <option value="ALL" ${levelFilter==="ALL"?"selected":""}>Все уровни</option>
+          ${["A1","A2","B1","B2","C1","C2"].map(l => `<option value="${l}" ${levelFilter===l?"selected":""}>${l}</option>`).join("")}
+        </select>
+        <select onchange="state._dictTheme = this.value; renderDictTab()">
+          <option value="ALL" ${themeFilter==="ALL"?"selected":""}>Все темы (пересекающиеся)</option>
+          ${THEMES.map(t => `<option value="${t}" ${themeFilter===t?"selected":""}>${t}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <div class="meta-row"><span>Показано первых ${filtered.length} совпадений из ${WORDS.length.toLocaleString("ru-RU")} слов</span></div>
+    <div class="dict-list">
+      ${filtered.map(w => {
+        const st = getStatus(w.id);
+        return `
+          <div class="dict-item">
+            <div>
+              <div class="dict-ko">${w.ko} <span style="font-size:0.88rem;color:var(--accent);font-weight:500">${w.rom}</span></div>
+              <div style="margin-top:3px">${w.ru}</div>
+              <div class="dict-tags">
+                <span class="tag">${w.level}</span>
+                <span class="tag">${statusLabels[st]}</span>
+                ${w.themes.map(t => `<span class="tag">${t}</span>`).join("")}
+              </div>
+            </div>
+            <button onclick="speak('${w.ko}', 1.0)">🔊</button>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderJamoPad(containerId, inputId) {
+  const pad = document.getElementById(containerId);
+  if (!pad) return;
+  const keys = ['ㅂ','ㅈ','ㄷ','ㄱ','ㅅ','ㅁ','ㄴ','ㅇ','ㄹ','ㅎ','ㅗ','ㅓ','ㅏ','ㅣ','ㅜ','ㅡ','ㅛ','ㅕ','ㅑ','ㅐ','ㅔ'];
+  pad.innerHTML = keys.map(k => `<button type="button" onclick="appendJamo('${inputId}','${k}')">${k}</button>`).join("");
+}
+
+function appendJamo(inputId, jamo) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.value = feedHangulInput(el.value, jamo);
+  el.dispatchEvent(new Event("input"));
+  el.focus();
+}
+
+function handleImeKey(e, inputId) {
+  if (e.key === "Backspace") {
+    e.preventDefault();
+    backspaceField(inputId);
+    return;
+  }
+  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const mapped = QWERTY_JAMO[e.key] || e.key;
+    if (isCompatJamo(mapped)) {
+      e.preventDefault();
+      appendJamo(inputId, mapped);
+    }
+  }
+}
+
+function backspaceField(inputId) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.value = backspaceHangul(el.value);
+  el.dispatchEvent(new Event("input"));
+  el.focus();
+}
+
+function clearField(inputId) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.value = "";
+  el.dispatchEvent(new Event("input"));
+  el.focus();
+}
+
+function exportProgress() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "korean-trainer-progress.json";
+  a.click();
+  toast("Прогресс сохранён в JSON");
+}
+
+function importProgress(ev) {
+  const file = ev.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      state = Object.assign(defaultState(), parsed);
+      saveState();
+      render();
+      toast("Прогресс импортирован");
+    } catch {
+      toast("Ошибка чтения JSON");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function render() {
+  updateStats();
+  if (state.tab === "new") renderNewTab();
+  else if (state.tab === "rep") renderRepeatTab();
+  else if (state.tab === "drill") renderDrillTab();
+  else if (state.tab === "dict") renderDictTab();
+}
+
+(function init() {
+  const themeSel = document.getElementById("themeFilter");
+  THEMES.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
+    themeSel.appendChild(opt);
+  });
+  document.getElementById("dbCount").textContent = `${WORDS.length.toLocaleString("ru-RU")} слов • A1–C2 • 16 тем • Офлайн PWA`;
+  switchTab(state.tab || "new");
+})();
+</script>
+</body>
+</html>

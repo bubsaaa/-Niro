@@ -1,0 +1,10 @@
+{
+  "name": "Корейский тренажёр",
+  "short_name": "Корейский",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "lang": "ru"
+}
